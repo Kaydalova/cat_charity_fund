@@ -1,5 +1,6 @@
+from sqlalchemy import Column, ForeignKey, Integer, Text
+
 from app.models.base_charity import BaseCharity
-from sqlalchemy import Column, Text, ForeignKey, Integer
 
 
 class Donation(BaseCharity):

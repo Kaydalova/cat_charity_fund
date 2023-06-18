@@ -1,6 +1,9 @@
-from sqlalchemy import Column, DateTime, Integer, Boolean
 import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer
+
 from app.core.db import Base
+
 
 class BaseCharity(Base):
     """ Базовая модель благотворительных проектов и пожертвований"""
