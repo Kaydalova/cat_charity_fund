@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, validator
 
 
 class CharityProjectBase(BaseModel):
-    name: Optional[str] = Field(..., min_length=2, max_length=100)
+    name: Optional[str] = Field(max_length=100)
     description: Optional[str]
     full_amount: Optional[int]
     @validator('full_amount')
@@ -20,6 +20,10 @@ class CharityProjectCreate(CharityProjectBase):
     name: str = Field(..., min_length=2, max_length=100)
     description: str
     full_amount: int
+
+    invested_amount: Optional[int]
+    fully_invested: Optional[bool]
+    close_date: Optional[datetime]
 
 
 class CharityProjectDB(BaseModel):
