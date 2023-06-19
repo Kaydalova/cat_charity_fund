@@ -17,12 +17,12 @@ class DonationBase(BaseModel):
 
 class DonationDB(DonationBase):
     id: int
-    user_id: str
-    invested_amount: int= Field(0)
+    user_id: Optional[str]
+    invested_amount: int = Field(0)
     fully_invested: bool
     create_date: datetime
     close_date: Optional[datetime]
-    
+
     class Config:
         orm_mode = True
 
@@ -38,5 +38,3 @@ class UserDonationRead(DonationBase):
 
     class Config:
         orm_mode = True
-
-

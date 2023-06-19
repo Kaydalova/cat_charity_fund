@@ -1,84 +1,79 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Donation
-from sqlalchemy import select
-from typing import List
-from app.schemas.charity_project import CharityProjectCreate
 import datetime
+from typing import List, Union
+
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import CharityProject, Donation
 
 
-async def invest_free_money_in_new_project(
-        charity_project: CharityProjectCreate,
-        session: AsyncSession) -> CharityProjectCreate:
-    free_money = await check_money_for_investing(session)
-    print(f'free_money {free_money}')
-    if free_money:
-        charity_project_needs_money = await gather_money_for_new_project(
-            charity_project, free_money[::-1], session)
-        print(f'charity_project_needs_money - {charity_project_needs_money}')
-        if charity_project_needs_money:
-            charity_project.invested_amount = (
-                    charity_project.full_amount - charity_project_needs_money)
-        else:
-            charity_project.invested_amount = charity_project.full_amount
-            charity_project.fully_invested = True
-            charity_project.close_date = datetime.datetime.now()
-    return charity_project
+async def invest_money_into_project(
+        new_item: Union[Donation, CharityProject],
+        session: AsyncSession
+) -> None:
+    if type(new_item) == Donation:
+        model = CharityProject
+    else:
+        model = Donation
+    print(f'model = {model}')
+    ready_for_investing = await check_ready_for_investing(
+        session=session, model=model)
+    print(f'ready_for_investing {ready_for_investing}')
+    if ready_for_investing:
+        print('ready')
+        await allocate_money(new_item, ready_for_investing, session)
 
 
-async def check_money_for_investing(session: AsyncSession) -> List[Donation]:
-    """
-    Функция проверяет есть ли в проекте неалоцированные средства
-    и возвращает список объектов Donation в которых они есть.
-    """
-    free_money = await session.execute(
-        select(Donation).where(Donation.fully_invested == 0))
-    return free_money.scalars().all()
+async def allocate_money(
+        new_item: Union[Donation, CharityProject],
+        ready_for_investing: List[Union[Donation, CharityProject]],
+        session: AsyncSession):
+    needs_investing = new_item.full_amount
+    print(f'needs_investing {needs_investing}')
+    while needs_investing and ready_for_investing:
+        invest_space = ready_for_investing.pop()
+        print(f'invest_space {invest_space}')
+        surplus = invest_space.full_amount - invest_space.invested_amount
+        print(f'surplus ={surplus}')
 
+        if surplus < needs_investing:
+            await item_set_fully_invested(invest_space, session)
+            needs_investing -= surplus
+            new_item.invested_amount += surplus
+        elif surplus > needs_investing:
+            invest_space.invested_amount += needs_investing
+            await item_set_fully_invested(new_item, session)
+            needs_investing = 0
+            session.add(invest_space)
+        else:  # surplus = money_to_allocate
+            needs_investing = 0
+            await item_set_fully_invested(invest_space, session)
+            await item_set_fully_invested(new_item, session)
 
-async def gather_money_for_new_project(
-        charity_project: CharityProjectCreate,
-        free_money: List[Donation],
-        session: AsyncSession) -> int:
-    """Функция распределяет свободные средства в новый проект
-    и возвращает остаток, необходимый для полного закрытия проекта."""
-    charity_project_needs_money = charity_project.full_amount
-    print(f'charity_project_needs_money {charity_project_needs_money}')
-    while charity_project_needs_money and free_money:
-        donation = free_money.pop()
-        surplus = donation.full_amount - donation.invested_amount
-
-        if surplus < charity_project_needs_money:
-            charity_project_needs_money -= surplus
-            donation.invested_amount = donation.full_amount
-            donation.fully_invested = True
-            donation.close_date = datetime.datetime.now()
-            session.add(donation)
-        elif surplus > charity_project_needs_money:
-            donation.invested_amount -= charity_project_needs_money
-            charity_project_needs_money = 0
-            session.add(donation)
-        else:  #surplus = charity_project_needs_money
-            donation.invested_amount = donation.full_amount
-            donation.fully_invested = True
-            donation.close_date = datetime.datetime.now()
-            charity_project_needs_money = 0
-            session.add(donation)
-
+    session.add(new_item)
     await session.commit()
-    return charity_project_needs_money
+    return needs_investing
 
 
+async def item_set_fully_invested(
+        item: Union[Donation, CharityProject],
+        session: AsyncSession) -> None:
+    item.invested_amount = item.full_amount
+    item.fully_invested = True
+    item.close_date = datetime.datetime.now()
+    session.add(item)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+async def check_ready_for_investing(
+        session: AsyncSession,
+        model: Union[Donation, CharityProject]
+) -> List[Union[Donation, CharityProject]]:
+    """
+    Функция проверяет есть ли незакрытые благотворительные проекты/пожертвования
+    и возвращает их список сортированный в порядке добавления.
+    """
+    ready_for_investing = await session.execute(
+        select(model).where(
+            model.fully_invested is None).order_by(
+                desc(model.create_date)))
+    return ready_for_investing.scalars().all()

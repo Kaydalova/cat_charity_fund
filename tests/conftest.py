@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 try:
-    from app.main import app  # noqa
+    from app.main import app # noqa
 except (NameError, ImportError):
     raise AssertionError(
         'Не обнаружен объект приложения `app`.'

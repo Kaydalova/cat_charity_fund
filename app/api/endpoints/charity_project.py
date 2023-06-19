@@ -1,21 +1,22 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.validators import (check_charity_project_exists,
+                                check_charity_project_invested_no_money,
+                                check_charity_project_is_opened,
+                                check_name_duplicate)
 from app.core.db import get_async_session
+from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
-
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
-from app.api.validators import (check_name_duplicate,
-                                check_charity_project_exists,
-                                check_charity_project_invested_no_money,
-                                check_charity_project_is_opened)
-from app.core.user import current_superuser
-from app.services.invest import invest_free_money_in_new_project
+from app.services.invest import invest_money_into_project
+from fastapi import APIRouter, Depends, HTTPException
+
 router = APIRouter()
+
 
 @router.post(
     '/',
@@ -25,9 +26,11 @@ async def create_new_charity_project(
         charity_project: CharityProjectCreate,
         session: AsyncSession = Depends(get_async_session)):
     await check_name_duplicate(charity_project.name, session)
-    charity_project = await invest_free_money_in_new_project(charity_project, session)
-    print(charity_project.dict())
+
     new_project = await charity_project_crud.create(charity_project, session)
+    await invest_money_into_project(
+        new_item=new_project, session=session)
+    await session.refresh(new_project)
     return new_project
 
 
@@ -52,7 +55,7 @@ async def partially_update_charity_project(
     if obj_in.full_amount and charity_project.invested_amount:
         if charity_project.invested_amount > obj_in.full_amount:
             raise HTTPException(
-                status_code= 422,
+                status_code=422,
                 detail='Нельзя установить новую целевую сумму меньше уже внесенной')
     charity_project = await charity_project_crud.update(charity_project, obj_in, session)
     return charity_project
@@ -70,5 +73,3 @@ async def remove_charity_project(
     await check_charity_project_is_opened(charity_project_id, session)
     charity_project = await charity_project_crud.remove(charity_project, session)
     return charity_project
-
-

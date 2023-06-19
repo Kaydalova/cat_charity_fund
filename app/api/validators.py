@@ -1,7 +1,8 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud.charity_project import charity_project_crud
 from app.models.charity_project import CharityProject
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.charity_project import charity_project_crud
 
 
 async def check_name_duplicate(project_name: str, session: AsyncSession) -> None:
@@ -30,6 +31,7 @@ async def check_charity_project_invested_no_money(
             status_code=405,
             detail='Нельзя удалить проект, в который уже были выделены деньги')
 
+
 async def check_charity_project_is_opened(
         project_id: int, session: AsyncSession) -> None:
     charity_project = await charity_project_crud.get(project_id, session)
@@ -37,6 +39,3 @@ async def check_charity_project_is_opened(
         raise HTTPException(
             status_code=422,
             detail='Нельзя удалять закрытые проекты')
-
-
-
