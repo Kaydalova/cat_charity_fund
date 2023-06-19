@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, validator
 class DonationBase(BaseModel):
     full_amount: int
     comment: Optional[str]
+    
     @validator('full_amount')
     def check_new_amount_not_less_than_invested(cls, value):
         """Сумма пожертвования должна быть больше 0."""

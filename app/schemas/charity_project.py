@@ -8,6 +8,7 @@ class CharityProjectBase(BaseModel):
     name: Optional[str] = Field(max_length=100)
     description: Optional[str]
     full_amount: Optional[int]
+
     @validator('full_amount')
     def check_new_amount_not_less_than_invested(cls, value):
         """Сумма сбора должна быть больше 0."""
