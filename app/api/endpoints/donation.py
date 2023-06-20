@@ -1,5 +1,6 @@
 from typing import List
 
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_async_session
@@ -8,12 +9,11 @@ from app.crud.donation import donation_crud
 from app.models import User
 from app.schemas.donation import DonationCreate, DonationDB, UserDonationRead
 from app.services.invest import invest_money_into_project
-from fastapi import APIRouter, Depends
 
 router = APIRouter()
 
 
-@router.get('/', response_model=List[DonationDB])
+@router.get('/', response_model=List[DonationDB], response_model_exclude={'close_date'})
 async def get_all_donations(session: AsyncSession = Depends(get_async_session)):
     """Только для суперюзеров."""
     all_donations = await donation_crud.get_multi(session)
@@ -23,6 +23,7 @@ async def get_all_donations(session: AsyncSession = Depends(get_async_session)):
 @router.post(
     '/',
     response_model=DonationDB,
+    response_model_exclude_none=True,
     response_model_exclude={
         'user_id', 'fully_invested',
         'invested_amount', 'close_date'})

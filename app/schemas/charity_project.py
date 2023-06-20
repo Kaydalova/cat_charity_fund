@@ -1,38 +1,37 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, PositiveInt
+
+from app.constants import CHARITY_PROJECT_MIN, CHARITY_PROJECT_NAME_MAX
 
 
 class CharityProjectBase(BaseModel):
-    name: Optional[str] = Field(max_length=100)
-    description: Optional[str]
-    full_amount: Optional[int]
+    name: Optional[str] = Field(
+        None,
+        min_length=CHARITY_PROJECT_MIN,
+        max_length=CHARITY_PROJECT_NAME_MAX)
+    description: Optional[str] = Field(
+        None, min_length=CHARITY_PROJECT_MIN)
+    full_amount: Optional[PositiveInt]
 
-    @validator('full_amount')
-    def check_new_amount_not_less_than_invested(cls, value):
-        """Сумма сбора должна быть больше 0."""
-        if value < 1:
-            raise ValueError('Сумма сбора должно быть больше 0')
-        return value
+    class Config:
+        extra = Extra.forbid
 
 
 class CharityProjectCreate(CharityProjectBase):
-    name: str = Field(..., min_length=2, max_length=100)
-    description: str
-    full_amount: int
+    name: str = Field(
+        ...,
+        min_length=CHARITY_PROJECT_MIN,
+        max_length=CHARITY_PROJECT_NAME_MAX)
+    description: str = Field(
+        ..., min_length=CHARITY_PROJECT_MIN)
+    full_amount: PositiveInt
 
-    invested_amount: Optional[int]
-    fully_invested: Optional[bool]
-    close_date: Optional[datetime]
 
-
-class CharityProjectDB(BaseModel):
-    name: str
-    description: str
-    full_amount: int
+class CharityProjectDB(CharityProjectCreate):
     id: int
-    invested_amount: Optional[int]
+    invested_amount: int
     fully_invested: bool
     create_date: datetime
     close_date: Optional[datetime]

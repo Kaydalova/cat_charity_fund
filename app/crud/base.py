@@ -1,11 +1,11 @@
 # app/crud/base.py
 from typing import Optional
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
-from fastapi.encoders import jsonable_encoder
 
 
 class CRUDBase:
@@ -53,6 +53,7 @@ class CRUDBase:
             session: AsyncSession,
     ):
         obj_data = jsonable_encoder(db_obj)
+        print(f'obj_data = {obj_data}')
         update_data = obj_in.dict(exclude_unset=True)
 
         for field in obj_data:
