@@ -1,14 +1,13 @@
 # Благотворительный фонд поддержки кошек :coin:
 
 ## Используемые технологии
-:snake: Python 3.10,
-:incoming_envelope: FastAPI 0.78.0,
-:busts_in_silhouette: FastAPI-Users 10.0.4,
-:recycle: Pydantic 1.9.1,
-:package: SQLAlchemy 1.4.36,
-:notebook: aiosqlite 0.17.0,
-:memo: Alembic 1.7.7,
-:white_check_mark: Flake8 4.0.1
+- :snake: Python 3.8.10
+- :incoming_envelope: FastAPI 0.78.0
+- :busts_in_silhouette: FastAPI-Users 10.0.4
+- :recycle: Pydantic 1.9.1
+- :package: SQLAlchemy 1.4.36
+- :notebook: aiosqlite 0.17.0
+- :memo: Alembic 1.7.7
 
 ## Описание проекта
 Фонд собирает пожертвования на различные целевые проекты: на медицинское обслуживание нуждающихся хвостатых, на обустройство кошачьей колонии в подвале, на корм оставшимся без попечения кошкам — на любые цели, связанные с поддержкой кошачьей популяции.
