@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User
+from app.models import CharityProject, Donation, User
 
 
 class CRUDBase:
@@ -53,7 +53,6 @@ class CRUDBase:
             session: AsyncSession,
     ):
         obj_data = jsonable_encoder(db_obj)
-        print(f'obj_data = {obj_data}')
         update_data = obj_in.dict(exclude_unset=True)
 
         for field in obj_data:
@@ -72,3 +71,17 @@ class CRUDBase:
         await session.delete(db_obj)
         await session.commit()
         return db_obj
+
+    async def get_project_id_by_name(
+            self,
+            project_name: str,
+            session: AsyncSession) -> Optional[int]:
+        project_name_id = await session.execute(
+            select(CharityProject.id).where(
+                CharityProject.name == project_name))
+        return project_name_id.scalars().first()
+
+    async def get_users_donations(self, user_id: int, session: AsyncSession):
+        user_donations = await session.execute(
+            select(Donation).where(Donation.user_id == user_id))
+        return user_donations.scalars().all()

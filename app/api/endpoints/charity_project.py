@@ -10,9 +10,11 @@ from app.api.validators import (check_charity_project_exists,
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
+from app.models import Donation
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
+from app.services.find_sources import find_sources
 from app.services.invest import invest_money_into_project
 
 router = APIRouter()
@@ -32,9 +34,12 @@ async def create_new_charity_project(
 
     new_project = await charity_project_crud.create(charity_project, session)
 
-    await invest_money_into_project(
-        new_item=new_project, session=session)
-
+    sources = await find_sources(session, Donation)
+    if sources:
+        changed_sources = invest_money_into_project(
+            target=new_project, sources=sources)
+        session.add(*changed_sources)
+    await session.commit()
     await session.refresh(new_project)
 
     return new_project
@@ -62,6 +67,7 @@ async def partially_update_charity_project(
 ):
     charity_project = await check_charity_project_exists(
         charity_project_id, session)
+
     await check_charity_project_fully_invested(charity_project)
     if obj_in.name:
         await check_name_duplicate(obj_in.name, session)
