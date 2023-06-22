@@ -1,3 +1,4 @@
+"""Настройки для работы с объектами User."""
 from typing import Optional, Union
 
 from fastapi import Depends, Request

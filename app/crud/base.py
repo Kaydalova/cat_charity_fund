@@ -1,5 +1,4 @@
-# app/crud/base.py
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
@@ -9,7 +8,9 @@ from app.models import CharityProject, Donation, User
 
 
 class CRUDBase:
-
+    """
+    Базовый класс с операциями CRUD.
+    """
     def __init__(self, model):
         self.model = model
 
@@ -72,16 +73,21 @@ class CRUDBase:
         await session.commit()
         return db_obj
 
-    async def get_project_id_by_name(
+    async def get_object_id_by_name(
             self,
-            project_name: str,
+            object_name: str,
+            model: Union[Donation, CharityProject],
             session: AsyncSession) -> Optional[int]:
         project_name_id = await session.execute(
-            select(CharityProject.id).where(
-                CharityProject.name == project_name))
+            select(model.id).where(
+                model.name == object_name))
         return project_name_id.scalars().first()
 
-    async def get_users_donations(self, user_id: int, session: AsyncSession):
-        user_donations = await session.execute(
-            select(Donation).where(Donation.user_id == user_id))
-        return user_donations.scalars().all()
+    async def get_users_objects(
+            self,
+            user_id: int,
+            model: Union[Donation, CharityProject],
+            session: AsyncSession):
+        user_objects = await session.execute(
+            select(model).where(model.user_id == user_id))
+        return user_objects.scalars().all()

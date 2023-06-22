@@ -1,3 +1,4 @@
+""" Pydantic схемы для работы с моделью CharityProject."""
 from datetime import datetime
 from typing import Optional
 
@@ -7,6 +8,7 @@ from app.constants import CHARITY_PROJECT_MIN, CHARITY_PROJECT_NAME_MAX
 
 
 class CharityProjectBase(BaseModel):
+    """Базовый класс для работы с ChrityProject."""
     name: Optional[str] = Field(
         None,
         min_length=CHARITY_PROJECT_MIN,
@@ -20,6 +22,7 @@ class CharityProjectBase(BaseModel):
 
 
 class CharityProjectCreate(CharityProjectBase):
+    """Схема данных для создания нового благотворительного проекта."""
     name: str = Field(
         min_length=CHARITY_PROJECT_MIN,
         max_length=CHARITY_PROJECT_NAME_MAX)
@@ -28,6 +31,7 @@ class CharityProjectCreate(CharityProjectBase):
 
 
 class CharityProjectDB(CharityProjectCreate):
+    """Схема данных возвращаемых из БД."""
     id: int
     invested_amount: int
     fully_invested: bool
@@ -39,4 +43,5 @@ class CharityProjectDB(CharityProjectCreate):
 
 
 class CharityProjectUpdate(CharityProjectBase):
+    """Схема данных для обновления благотворительного проекта."""
     pass

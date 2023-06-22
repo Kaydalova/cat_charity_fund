@@ -6,7 +6,11 @@ from app.core.config import settings
 
 
 class PreBase:
-
+    """
+    Подготовительный класс для ORM-моделей.
+    Устанавливает название таблиц в формате `lowercase`
+    и автоматическое добавление столбца `id` с типом `int`.
+    """
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()

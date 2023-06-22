@@ -1,3 +1,4 @@
+"""Эндпоинты для обработки запросов к charity_project."""
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -20,6 +21,22 @@ from app.services.invest import invest_money_into_project
 router = APIRouter()
 
 
+@router.get(
+    '/',
+    response_model=List[CharityProjectDB],
+    response_model_exclude={'close_date'})
+async def get_all_charity_projects(
+        session: AsyncSession = Depends(get_async_session)
+) -> List[CharityProjectDB]:
+    """
+    Получение списка всех благотворительных проектов
+    @param session: объект сессии
+    @return: Список проектов
+    """
+    all_projects = await charity_project_crud.get_multi(session)
+    return all_projects
+
+
 @router.post(
     '/',
     response_model=CharityProjectDB,
@@ -29,7 +46,14 @@ router = APIRouter()
 async def create_new_charity_project(
         charity_project: CharityProjectCreate,
         session: AsyncSession = Depends(get_async_session)
-):
+) -> CharityProjectDB:
+    """
+    Создает новый благотворительный проект.
+    Доступно только для суперюзеров.
+    @param charity_project: Данные для создания проекта
+    @param session: объект сессии
+    @return: Новосозданный благотворительный проект
+    """
     await check_name_duplicate(charity_project.name, session)
 
     new_project = await charity_project_crud.create(charity_project, session)
@@ -45,16 +69,6 @@ async def create_new_charity_project(
     return new_project
 
 
-@router.get(
-    '/',
-    response_model=List[CharityProjectDB],
-    response_model_exclude={'close_date'})
-async def get_all_charity_projects(
-        session: AsyncSession = Depends(get_async_session)):
-    all_projects = await charity_project_crud.get_multi(session)
-    return all_projects
-
-
 @router.patch(
     '/{charity_project_id}',
     response_model=CharityProjectDB,
@@ -64,7 +78,17 @@ async def partially_update_charity_project(
         charity_project_id: int,
         obj_in: CharityProjectUpdate,
         session: AsyncSession = Depends(get_async_session)
-):
+) -> CharityProjectDB:
+    """
+    Редактирует существующий благотворительный проект.
+    Закрытый проект нельзя редактировать,
+    нельзя установить требуемую сумму меньше уже вложенной.
+    Доступно только для суперюзеров.
+    @param charity_project_id: идентификатор редактируемого проекта
+    @param obj_in: pydantic схема с данными для обновления
+    @param session: объект сессии
+    @return: обновленный благотворительный проект
+    """
     charity_project = await check_charity_project_exists(
         charity_project_id, session)
 
@@ -83,7 +107,17 @@ async def partially_update_charity_project(
     dependencies=[Depends(current_superuser)])
 async def remove_charity_project(
         charity_project_id: int,
-        session: AsyncSession = Depends(get_async_session)):
+        session: AsyncSession = Depends(get_async_session)
+) -> CharityProjectDB:
+    """
+    Удаляет существующий благотворительный проект.
+    Закрытый проект нельзя редактировать,
+    нельзя установить требуемую сумму меньше уже вложенной.
+    Доступно только для суперюзеров.
+    @param charity_project_id: идентификатор проекта
+    @param session: объект сессии
+    @return: Удаленный благотворительный проект
+    """
     charity_project = await check_charity_project_exists(charity_project_id, session)
     await check_charity_project_invested_no_money(charity_project_id, session)
     await check_charity_project_fully_invested(charity_project)

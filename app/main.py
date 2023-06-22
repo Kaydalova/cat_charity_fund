@@ -1,3 +1,4 @@
+"""Точка входа в приложение."""
 from fastapi import FastAPI
 
 from app.api.routers import main_router

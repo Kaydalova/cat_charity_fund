@@ -1,3 +1,4 @@
+""" Функции для проверки данных"""
 import datetime
 from http import HTTPStatus
 
@@ -16,7 +17,11 @@ async def check_name_duplicate(
         project_name: str,
         session: AsyncSession
 ) -> None:
-    if await charity_project_crud.get_project_id_by_name(project_name, session):
+    """
+    Проверяет не занято ли указанное имя проекта.
+    """
+    if await charity_project_crud.get_object_id_by_name(
+            project_name, CharityProject, session):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=PROJECT_NAME_ALREADY_EXISTS)
@@ -25,6 +30,9 @@ async def check_name_duplicate(
 async def check_charity_project_exists(
         project_id: int,
         session: AsyncSession) -> CharityProject:
+    """
+    Проверяет существует ли благотворительный проект по указанному id.
+    """
     charity_project = await charity_project_crud.get(project_id, session)
     if not charity_project:
         raise HTTPException(
@@ -35,6 +43,9 @@ async def check_charity_project_exists(
 
 async def check_charity_project_invested_no_money(
         project_id: int, session: AsyncSession) -> None:
+    """
+    Выполняет проверку, были ли инвестиции в указанный проект.
+    """
     charity_project = await charity_project_crud.get(project_id, session)
     if charity_project.invested_amount:
         raise HTTPException(
@@ -44,6 +55,9 @@ async def check_charity_project_invested_no_money(
 
 async def check_charity_project_fully_invested(
         charity_project: CharityProject) -> None:
+    """
+    Функция проверяет был ли проект инвестирован полностью.
+    """
     if charity_project.fully_invested:
         raise HTTPException(
             status_code=400,
@@ -53,6 +67,12 @@ async def check_charity_project_fully_invested(
 async def check_new_full_amount(
         charity_project: CharityProject,
         obj_in: CharityProjectUpdate) -> CharityProject:
+    """
+    Функция проверяет, что новая сумма пожертвований на проекте
+    не меньше уже внесенной.
+    Если новая целевая сумма равна уже сделанным пожертвованиям,
+    статус проекта меняется на fully_invested и присавивается close_date.
+    """
 
     if charity_project.invested_amount > obj_in.full_amount:
         raise HTTPException(
